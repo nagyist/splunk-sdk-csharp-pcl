@@ -3,8 +3,8 @@
 
 > **Important:** The Splunk Software Development Kit (SDK) for C# version 2.0 
 > is a complete rewrite of the Splunk SDK for C# version 1.0, and introduces 
-> completely new APIs. Applications built with Splunk SDK for C# 1.x will not 
-> recompile using Splunk SDK for C# version 2.0. For more information, see
+> completely new APIs. **Applications built with Splunk SDK for C# 1.x will not 
+> recompile using Splunk SDK for C# version 2.0.** For more information, see
 > [Compatibility](#compat).
 
 The Splunk SDK for C# v2.0 contains library code and examples designed to 
