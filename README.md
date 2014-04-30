@@ -1,23 +1,28 @@
 # Splunk SDK for C# 
 ### Version 2.0 pre-release
 
-**Note: The Splunk SDK for C# is in development and is not currently supported.**
+> **Important:** The Splunk Software Development Kit (SDK) for C# version 2.0 
+> is a complete rewrite of the Splunk SDK for C# version 1.0, and introduces 
+> completely new APIs. Applications built with Splunk SDK for C# 1.x will not 
+> recompile using Splunk SDK for C# version 2.0. For more information, see
+> [Compatibility](#compat).
 
-The Splunk Software Development Kit (SDK) for C# contains library code and 
-examples designed to enable developers to build applications using Splunk.
+The Splunk SDK for C# v2.0 contains library code and examples designed to 
+enable developers to build applications using Splunk Enterprise.
 
-Splunk is a search engine and analytic environment that uses a distributed
-map-reduce architecture to efficiently index, search, and process large 
-time-varying data sets.
+Splunk Enterprise is a search engine and analytic environment that uses a 
+distributed map-reduce architecture to efficiently index, search, and process 
+large time-varying data sets.
 
-The Splunk product is popular with system administrators for aggregation and
-monitoring of IT machine data, security, compliance and a wide variety of 
-other scenarios that share a requirement to efficiently index, search, analyze,
-and generate real-time notifications from large volumes of time series data.
+The Splunk Enterprise product is popular with system administrators for 
+aggregation and monitoring of IT machine data, security, compliance and a 
+wide variety of other scenarios that share a requirement to efficiently 
+index, search, analyze, and generate real-time notifications from large 
+volumes of time series data.
 
 The Splunk developer platform enables developers to take advantage of the 
-same technology used by the Splunk product to build exciting new applications
-that are enabled by Splunk's unique capabilities.
+same technology used by the Splunk Enterprise product to build exciting 
+new applications that are enabled by Splunk Enterprise's unique capabilities.
 
 ## What's new in Version 2.0
 
@@ -55,7 +60,7 @@ foreach (var record in searchResults)
 
 .NET 4.5, PCL (Windows 8.1, Windows Phone 8.1, iOS (via Xamarin.iOS), Android (via Xamarin.Android)
 
-## Compatibility
+## [Compatibility](id:compat)
 
 The Splunk SDK for C# version 2.0 is a rewrite of the existing SDK, and introduces completely new APIs. 
 
