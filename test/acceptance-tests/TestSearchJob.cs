@@ -16,17 +16,13 @@
 
 namespace Splunk.Client.UnitTesting
 {
+    using Splunk.Client;
+    using Splunk.Client.Helpers;
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.Threading;
-    using System.Threading.Tasks;
-    using System;
-    using System.IO;
-    using System.Net;
-    using System.Text.RegularExpressions;
-    using Splunk.Client;
-    using SDKHelper;
     using Xunit;
 
     /// <summary>

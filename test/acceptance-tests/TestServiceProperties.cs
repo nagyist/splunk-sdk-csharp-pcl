@@ -18,11 +18,11 @@ using System.Linq;
 
 namespace Splunk.Client.UnitTesting
 {
+    using Splunk.Client;
+    using Splunk.Client.Helpers;
     using System;
     using System.Collections.Generic;
     using System.Net;
-    using Splunk.Client;
-    using SDKHelper;
     using Xunit;
 
     /// <summary>

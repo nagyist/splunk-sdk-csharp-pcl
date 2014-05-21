@@ -241,44 +241,11 @@ namespace Splunk.Client
         #region Methods
 
         /// <summary>
-        /// Asynchronously creates the current <see cref="Application"/>.
-        /// instance.
-        /// </summary>
-        /// <param name="template">
-        /// 
-        /// </param>
-        /// <param name="attributes">
-        /// 
-        /// </param>
-        /// <returns></returns>
-        /// <remarks>
-        /// This method uses the <a href="http://goo.gl/SzKzNX">POST 
-        /// apps/local</a> endpoint to create the current <see cref=
-        /// "Application"/>.
-        /// </remarks>
-        public async Task CreateAsync(string template, ApplicationAttributes attributes = null)
-        {
-            var resourceName = ApplicationCollection.ClassResourceName;
-
-            var args = new CreationArgs()
-            {
-                ExplicitApplicationName = this.Name,
-                Filename = false,
-                Name = this.Name,
-                Template = template
-            };
-
-            using (var response = await this.Context.PostAsync(this.Namespace, resourceName, args, attributes))
-            {
-                await response.EnsureStatusCodeAsync(HttpStatusCode.Created);
-                await this.UpdateSnapshotAsync(response);
-            }
-        }
-
-        /// <summary>
         /// Asynchronously disables the current <see cref="Application"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>
+        /// A <see cref="Task"/> representing this operation.
+        /// </returns>
         /// <remarks>
         /// This method uses the POST apps/local/{name}/disable endpoint to 
         /// disable the current <see cref="Application"/>.
@@ -296,7 +263,9 @@ namespace Splunk.Client
         /// <summary>
         /// Asynchronously enables the current <see cref="Application"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>
+        /// A <see cref="Task"/> representing this operation.
+        /// </returns>
         /// <remarks>
         /// This method uses the POST apps/local/{name}/enable endpoint to 
         /// enable the current <see cref="Application"/>.
@@ -349,42 +318,6 @@ namespace Splunk.Client
             var resource = new ApplicationUpdateInfo(this.Context, this.Namespace, this.Name);
             await resource.GetAsync();
             return resource;
-        }
-
-        /// <summary>
-        /// Asynchronously installs an application from a Splunk application
-        /// archive file.
-        /// </summary>
-        /// <param name="path">
-        /// Specifies the location of a Splunk application archive file.
-        /// </param>
-        /// <param name="update">
-        /// <c>true</c> if Splunk should allow the installation to update an
-        /// existing application. The default value is <c>false</c>.
-        /// </param>
-        /// <returns></returns>
-        /// <remarks>
-        /// This method uses the <a href="http://goo.gl/SzKzNX">POST 
-        /// apps/local</a> endpoint to install the application from the archive
-        /// file on <paramref name="path"/>.
-        /// </remarks>
-        public async Task InstallAsync(string path, bool update = false)
-        {
-            var resourceName = ApplicationCollection.ClassResourceName;
-
-            var args = new CreationArgs()
-            {
-                ExplicitApplicationName = this.Name,
-                Filename = true,
-                Name = path,
-                Update = update
-            };
-
-            using (var response = await this.Context.PostAsync(this.Namespace, resourceName, args))
-            {
-                await response.EnsureStatusCodeAsync(HttpStatusCode.Created);
-                await this.UpdateSnapshotAsync(response);
-            }
         }
 
         /// <summary>
@@ -452,29 +385,6 @@ namespace Splunk.Client
         #endregion
 
         #region Types
-
-        class CreationArgs : Args<CreationArgs>
-        {
-            [DataMember(Name = "explicit_appname", IsRequired = true)]
-            public string ExplicitApplicationName
-            { get; set; }
-
-            [DataMember(Name = "filename", IsRequired = true)]
-            public bool? Filename
-            { get; set; }
-
-            [DataMember(Name = "name", IsRequired = true)]
-            public string Name
-            { get; set; }
-
-            [DataMember(Name = "template", EmitDefaultValue = true)]
-            public string Template
-            { get; set; }
-
-            [DataMember(Name = "update", EmitDefaultValue = false)]
-            public bool? Update
-            { get; set; }
-        }
 
         class UpdateArgs : Args<UpdateArgs>
         {

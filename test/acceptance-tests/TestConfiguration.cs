@@ -16,10 +16,10 @@
 
 namespace Splunk.Client.UnitTesting
 {
+    using Splunk.Client;
+    using Splunk.Client.Helpers;
     using System;
     using System.Linq;
-    using Splunk.Client;
-    using SDKHelper;
     using Xunit;
 
     /// <summary>

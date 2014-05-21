@@ -16,29 +16,19 @@
 
 namespace Splunk.Client.UnitTesting
 {
-    using System;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Threading;
     using Splunk.Client;
-    using Splunk.Client.UnitTesting;
-    using Xunit;
+    using Splunk.Client.Helpers;
+    using System;
     using System.Diagnostics;
-    using System.IO;
-    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
-    using SDKHelper;
+    using Xunit;
 
     /// <summary>
     /// Test helper class
     /// </summary>
     public static class TestHelper
     {
-        static TestHelper()
-        {
-        }
-
         public static int VersionCompare(Service service, string versionToCompare)
         {
             Version info = service.Server.GetInfoAsync().Result.Version;

@@ -20,19 +20,21 @@
 
 namespace Splunk.Client
 {
-    using System.Runtime.Serialization;
+    using System.IO;
+    using System.Linq;
     using System.Net;
+    using System.Runtime.Serialization;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Provides an object representation of a collection of Splunk applications.
+    /// Provides an object representation of the Splunk Applications endpoint.
     /// </summary>
-    public class ApplicationCollection : EntityCollection<ApplicationCollection, Application>
+    public class ApplicationCollectionEndpoint : Endpoint
     {
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ApplicationCollection"/>
+        /// Initializes a new instance of the <see cref="ApplicationEndpoint"/>
         /// class.
         /// </summary>
         /// <param name="context">
@@ -43,21 +45,8 @@ namespace Splunk.Client
         /// </param>
         /// <param name="args">
         /// </param>
-        internal ApplicationCollection(Context context, Namespace ns, ApplicationCollectionArgs args = null)
-            : base(context, ns, ClassResourceName, args)
-        { }
-
-        /// <summary>
-        /// Infrastructure. Initializes a new instance of the <see cref=
-        /// "ApplicationCollection"/> class.
-        /// </summary>
-        /// <remarks>
-        /// This API supports the Splunk client infrastructure and is not 
-        /// intended to be used directly from your code. Use <see cref=
-        /// "Service.GetApplicationsAsync"/> to asynchronously retrieve a 
-        /// collection of installed Splunk applications.
-        /// </remarks>
-        public ApplicationCollection()
+        internal ApplicationCollectionEndpoint(Service service)
+            : base(service, ClassResourceName)
         { }
 
         #endregion
@@ -87,20 +76,18 @@ namespace Splunk.Client
         public async Task<Application> CreateAsync(string name, string template,
             ApplicationAttributes attributes = null)
         {
-            var resourceName = ApplicationCollection.ClassResourceName;
-
             var args = new CreationArgs()
             {
                 ExplicitApplicationName = name,
                 Filename = false,
                 Name = name,
                 Template = template
-            };
+            }
+            .Concat(attributes);
 
-            using (var response = await this.Context.PostAsync(this.Namespace, resourceName, args, attributes))
+            using (var response = await this.Context.PostAsync(this.Namespace, this.Name, args))
             {
                 await response.EnsureStatusCodeAsync(HttpStatusCode.Created);
-
                 var entity = new Application();
                 var feed = new AtomFeed();
 
@@ -109,6 +96,80 @@ namespace Splunk.Client
 
                 return entity;
             }
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves the complete <see cref="ApplicationCollection"/>
+        /// resource at the current endpoint <see cref="Address"/>.
+        /// </summary>
+        /// <returns>
+        /// The collection of <see cref="Application"/> resources retrieved.
+        /// </returns>
+        public async Task<ApplicationCollection> GetAllAsync()
+        {
+            var args = new Argument[] { new Argument("count", "0") };
+
+            using (Response response = await this.Context.GetAsync(this.Namespace, this.Name, args))
+            {
+                await response.EnsureStatusCodeAsync(System.Net.HttpStatusCode.OK);
+
+                var feed = new AtomFeed();
+                await feed.ReadXmlAsync(response.XmlReader);
+
+                var entity = new ApplicationCollection();
+                entity.Initialize(this.Context, feed);
+
+                return entity;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously retrieves a slice of the <see cref="ApplicationCollection"/>
+        /// resource at the current endpoint <see cref="Address"/>.
+        /// </summary>
+        /// <param name="args">
+        /// Specifies the slice of the <see cref="ApplicationCollection"/>
+        /// resource to be retrieved.
+        /// </param>
+        /// <returns>
+        /// The collection of <see cref="Application"/> resources retrieved.
+        /// </returns>
+        public async Task<ApplicationCollection> GetSliceAsync(int offset = 0,
+            int count = 30, ApplicationCollectionArgs args = null)
+        {
+            var slice = new Argument[] 
+            { 
+                new Argument("offset", offset),
+                new Argument("count", count)
+            };
+
+            using (Response response = await this.Context.GetAsync(this.Namespace, this.Name, slice, args))
+            {
+                await response.EnsureStatusCodeAsync(System.Net.HttpStatusCode.OK);
+                
+                var feed = new AtomFeed();
+                await feed.ReadXmlAsync(response.XmlReader);
+
+                var entity = new ApplicationCollection();
+                entity.Initialize(this.Context, feed);
+
+                return entity;
+            }
+        }
+
+        /// <summary>
+        /// Gets an <see cref="ApplicationEndpoint"/> by name.
+        /// </summary>
+        /// <param name="name">
+        /// The name of an <see cref="Application"/> resource.
+        /// </param>
+        /// <returns>
+        /// An endpoint for manipulating the <see cref="Application"/> resource
+        /// identified by <paramref name="name"/>.
+        /// </returns>
+        public ApplicationEndpoint GetEndpoint(string name)
+        {
+            return new ApplicationEndpoint(this.Context, this.Namespace, name);
         }
 
         /// <summary>
@@ -148,14 +209,32 @@ namespace Splunk.Client
             using (var response = await this.Context.PostAsync(this.Namespace, resourceName, args))
             {
                 await response.EnsureStatusCodeAsync(HttpStatusCode.Created);
-                
+
                 var entity = new Application();
                 var feed = new AtomFeed();
 
                 await feed.ReadXmlAsync(response.XmlReader);
                 entity.Initialize(this.Context, feed);
-                
+
                 return entity;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously forces the Splunk server to reload data for the
+        /// <see cref="ApplicationCollection"/> at the current endpoint
+        /// <see cref="Address"/>.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="Task"/> representing this operation.
+        /// </returns>
+        public async Task ReloadAsync()
+        {
+            var reload = new ResourceName(this.Name, "_reload");
+
+            using (Response response = await this.Context.GetAsync(this.Namespace, reload))
+            {
+                await response.EnsureStatusCodeAsync(System.Net.HttpStatusCode.OK);
             }
         }
 

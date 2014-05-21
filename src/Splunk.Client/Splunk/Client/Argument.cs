@@ -46,6 +46,19 @@ namespace Splunk.Client
             this.Value = value;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Argument"/> class.
+        /// </summary>
+        /// <param name="name">
+        /// Parameter name.
+        /// </param>
+        /// <param name="value">
+        /// Argument value.
+        /// </param>
+        public Argument(string name, object value)
+            : this(name, value.ToString())
+        {  }
+
         #endregion
 
         #region Properties

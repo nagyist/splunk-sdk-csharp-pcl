@@ -20,7 +20,8 @@ namespace Splunk.Client.Examples.ReactiveUI
     using System.Windows;
 
     using Splunk.Client;
-    using SDKHelper;
+    using Splunk.Client.Helpers;
+
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>

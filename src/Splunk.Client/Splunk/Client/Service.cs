@@ -56,10 +56,12 @@ namespace Splunk.Client
         {
             Contract.Requires<ArgumentNullException>(context != null, "context");
 
-            this.context = context;
             this.ns = ns ?? Namespace.Default;
-            this.receiver = new Receiver(context, this.Namespace);
-            this.server = new Server(context, this.Namespace);
+            this.context = context;
+
+            this.applications = new ApplicationCollectionEndpoint(this);
+            this.receiver = new Receiver(this.Context, this.Namespace);
+            this.server = new Server(this.Context, this.Namespace);
         }
 
         /// <summary>
@@ -101,6 +103,10 @@ namespace Splunk.Client
             get { return this.ns; }
         }
 
+        public ApplicationCollectionEndpoint ApplicationsEndpoint
+        {
+            get { return this.applications; }
+        }
         /// <summary>
         /// 
         /// </summary>
@@ -360,9 +366,9 @@ namespace Splunk.Client
         public async Task<Application> CreateApplicationAsync(string name, string template, 
             ApplicationAttributes attributes = null)
         {
-            var resource = new Application(this.Context, this.Namespace, name);
-            await resource.CreateAsync(template, attributes);
-            return resource;
+            var resource = new ApplicationCollection(this.Context, this.Namespace);
+            var entity = await resource.CreateAsync(name, template, attributes);
+            return entity;
         }
 
         /// <summary>
@@ -472,11 +478,11 @@ namespace Splunk.Client
         /// apps/local</a> endpoint to construct the <see cref="Application"/>
         /// object it returns.
         /// </remarks>
-        public async Task<Application> InstallApplicationAsync(string name, string path, bool update = false)
+        public async Task<Application> InstallApplicationAsync(string path, string name = null, bool update = false)
         {
-            var resource = new Application(this.Context, this.Namespace, name);
-            await resource.InstallAsync(path, update);
-            return resource;
+            var resource = new ApplicationCollection(this.Context, this.Namespace);
+            var entity = await resource.InstallAsync(path, name, update);
+            return entity;
         }
 
         /// <summary>
@@ -1389,7 +1395,8 @@ namespace Splunk.Client
         static readonly ResourceName AuthenticationHttpAuthTokens = new ResourceName("authentication", "httpauth-tokens");
         static readonly ResourceName AuthorizationCapabilities = new ResourceName("authorization", "capabilities");
         static readonly ResourceName SearchJobsExport = new ResourceName("search", "jobs", "export");
-        
+
+        readonly ApplicationCollectionEndpoint applications;
         readonly Context context;
         readonly Namespace ns;
         readonly Receiver receiver;

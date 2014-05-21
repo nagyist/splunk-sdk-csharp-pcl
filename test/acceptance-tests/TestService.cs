@@ -17,6 +17,7 @@
 namespace Splunk.Client.UnitTesting
 {
     using Splunk.Client;
+    using Splunk.Client.Helpers;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -28,7 +29,6 @@ namespace Splunk.Client.UnitTesting
     using System.Threading;
     using System.Threading.Tasks;
     using System.Web.Security;
-    using SDKHelper;
     using Xunit;
 
     public class TestService : IUseFixture<AcceptanceTestingSetup>

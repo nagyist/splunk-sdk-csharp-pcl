@@ -238,6 +238,20 @@ namespace Splunk.Client
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context">
+        /// 
+        /// </param>
+        /// <param name="feed">
+        /// 
+        /// </param>
+        protected internal virtual void Initialize(Context context, AtomFeed feed)
+        {
+            this.data = new DataCache(context, feed);
+        }
+
+        /// <summary>
         /// Asynchronously retrieves a fresh copy of the entities in the 
         /// current <see cref="EntityCollection&lt;TCollection, TEntity&gt;"/> 
         /// that contains all changes to it since it was last retrieved.

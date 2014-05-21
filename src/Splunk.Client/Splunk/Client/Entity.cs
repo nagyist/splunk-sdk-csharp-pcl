@@ -263,6 +263,28 @@ namespace Splunk.Client
         }
 
         /// <summary>
+        /// Infrastructure. Initializes the current <see cref="Entity&lt;
+        /// TEntity&gt;"/>.
+        /// </summary>
+        /// <param name="context">
+        /// An object representing a Splunk server session.
+        /// </param>
+        /// <param name="entry">
+        /// An atom entry containing metadata, plus the content for the current
+        /// <see cref="Entity&lt;TEntity&gt;"/>.
+        /// </param>
+        /// <remarks>
+        /// Override this method to provide special initialization code. Call
+        /// the base implementation before initialization is complete. This
+        /// method supports the Splunk client infrastructure and is not 
+        /// intended to be used directly from your code.
+        /// </remarks>
+        protected internal virtual void Initialize(Context context, AtomFeed feed)
+        {
+            this.Initialize(context, feed.Entries[0]);
+        }
+
+        /// <summary>
         /// Infrastructure. Asynchronously brings the current <see cref=
         /// "Entity&lt;TEntity&gt;"/> up to date with new metadata and
         /// content.

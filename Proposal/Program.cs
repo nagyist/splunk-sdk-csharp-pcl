@@ -1,177 +1,155 @@
 ﻿namespace Proposal
 {
     using Splunk.Client;
-    using Splunk.Client.UnitTesting;
     using System;
-    using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
 
     class Program
     {
+        static int Main(string[] args)
+        {
+            return 0;
+        }
+
         public async Task AsIs()
         {
-            using (var service = await TestHelper.CreateService())
+            //// This major issue surfaces over and over again
+            //// - Confusion due to uncertainty about side effects
+            //// Question: When must I call GetAsync to update the state of an
+            //// entity or entity collection.
+
+            using (var service = new Service(Scheme.Https, "localhost", 8089))
             {
-                var collection = await service.GetApplicationsAsync();
-                await collection.ReloadAsync(); // Instructs Splunk to reload all application state
-                await collection.GetAsync();    // Updates cached content
-
-                foreach (var application in collection)
+                var collection = await service.GetApplicationsAsync(new ApplicationCollectionArgs()
                 {
-                    if (application.Name == "twitter2")
+                    Offset = 0,
+                    Count = 0
+                });
+
+                await collection.ReloadAsync(); // Instructs Splunk to reload all application state.
+                await collection.GetAsync();    // Did reload update the collection? The docs say no so I call GetAsync
+
+                //// Iterate through the collection using pagination
+
+                int offset = 0;
+
+                do
+                {
+                    collection = await service.GetApplicationsAsync(new ApplicationCollectionArgs()
                     {
-                        await application.RemoveAsync(); // Removes the twitter2 application, but does not update the application entity's cached content
+                        Offset = offset
+                    });
 
-                        try
+                    foreach (var application in collection)
+                    {
+                        if (application.Name == "twitter2")
                         {
-                            await application.GetAsync();
+                            await application.DisableAsync();                  // Does this method update state?
+                            await application.GetAsync();                      // The docs say no so I GetAsync.
+
+                            if (application.Disabled)                          // Thank goodness I checked the docs
+                            {
+                                Console.WriteLine("Verified: It worked");
+                            }
                         }
-                        catch (ResourceNotFoundException)
-                        {
-                            // As expected because the application no longer exists
-                        }
-
-                        var path = Path.Combine(Environment.CurrentDirectory, "Data", "app-for-twitter-data_230.spl");
-
-                        await application.InstallAsync(path, update: true); // incorrectly implemented; should be changed; should be on applications
-                        await service.InstallApplicationAsync("twitter2", path, update: true); // better
-
-                        var applicationSetupInfo = await application.GetSetupInfoAsync();
-                        var applicationUpdateInfo = await application.GetUpdateInfoAsync();
-
-                        await application.RemoveAsync(); // confusing
-                        await service.RemoveApplicationAsync("twitter2"); // better
                     }
+
+                    offset += collection.Pagination.ItemsPerPage;
                 }
-
-                //// Create an app from one of the built-in templates
-
-                var name = string.Format("delete-me-{0:N}", Guid.NewGuid());
-
-                var creationAttributes = new ApplicationAttributes()
-                {
-                    ApplicationAuthor = "Splunk",
-                    Configured = true,
-                    Description = "This app confirms that an app can be created from a template",
-                    Label = name,
-                    Version = "2.0.0",
-                    Visible = true
-                };
-
-                var templatedApplication = await service.CreateApplicationAsync(name, "barebones", creationAttributes);
-
-                var updateAttributes = new ApplicationAttributes()
-                {
-                    ApplicationAuthor = "Splunk, Inc.",
-                    Configured = true,
-                    Description = "This app update confirms that an app can be updated from a template",
-                    Label = name,
-                    Version = "2.0.1",
-                    Visible = true
-                };
-
-                await templatedApplication.UpdateAsync(updateAttributes, checkForUpdates: true);
-                await templatedApplication.GetAsync(); // Because UpdateAsync doesn't return the updated entity
-
-                await templatedApplication.DisableAsync();
-                await templatedApplication.GetAsync(); // Because POST apps/local/{name}/disable does not return new data
-
-                await templatedApplication.EnableAsync();
-                await templatedApplication.GetAsync(); // Because POST apps/local/{name}/enable does not return new data
-
-                var templatedApplicationArchiveInfo = await templatedApplication.PackageAsync();
-                await templatedApplicationArchiveInfo.GetAsync(); // Repackages the application because that's what this entity/endpoint does on GET.
-                await templatedApplication.RemoveAsync();
+                while (offset < collection.Pagination.TotalResults);
             }
         }
 
         public async Task MayBe()
         {
-            using (var service = await TestHelper.CreateService())
+            using (var service = new Service(Scheme.Https,  "localhost", 8089))
             {
-                var collection = await service.Applications.GetAsync();
-                var status = await service.Applications.ReloadAsync(); // Instructs Splunk to reload all applications
-                collection = await service.Applications.GetAsync();
+                //// Force Splunk to reload all data for the Applications entity collection
 
-                foreach (var application in collection)
+                var original = await service.ApplicationsEndpoint.GetAllAsync();
+                await service.ApplicationsEndpoint.ReloadAsync();
+
+                //// See if the list of application resources changed as a result of the reload
+
+                var updated = await service.ApplicationsEndpoint.GetAllAsync();
+
+                if (!updated.SequenceEqual(original))
                 {
-                    if (application.Name == "twitter2")
-                    {
-                        service.Applications.RemoveAsync("twitter2");
-
-                        try
-                        {
-                            await service.Applications.GetAsync("twitter2");
-                        }
-                        catch (ResourceNotFoundException)
-                        {
-                            // As expected because the application no longer exists
-                        }
-
-                        applicationEndpoint = await service.Applications.CreateEndpoint("twitter2");
-
-                        try
-                        {
-                            await applicationEndpoint.GetAsync();
-                        }
-                        catch (ResourceNotFoundException)
-                        {
-                            // As expected because the application no longer exists
-                        }
-
-                        var path = Path.Combine(Environment.CurrentDirectory, "Data", "app-for-twitter-data_230.spl");
-
-                        await service.Applications.InstallAsync(path, update: true);
-
-                        var applicationSetupInfo = await applicationEndpoint.GetSetupInfoAsync();
-                        var applicationUpdateInfo = await applicationEndpoint.GetUpdateInfoAsync();
-
-                        await applicationEndpoint.RemoveAsync();
-                    }
+                    Console.WriteLine("List of application resources changed.");
                 }
 
-                //// Create an app from one of the built-in templates
+                //// Use pagination to iterate through the Applications entity collection (default: 30 at a time)
 
-                var name = string.Format("delete-me-{0:N}", Guid.NewGuid());
+                var applicationsEndpoint = service.ApplicationsEndpoint;
+                ApplicationCollection collection;
+                ApplicationEndpoint endpoint;
+                int offset = 0;
+                int i = 0;
 
-                var creationAttributes = new ApplicationAttributes()
+                do
                 {
-                    ApplicationAuthor = "Splunk",
-                    Configured = true,
-                    Description = "This app confirms that an app can be created from a template",
-                    Label = name,
-                    Version = "2.0.0",
-                    Visible = true
-                };
+                    collection = await applicationsEndpoint.GetSliceAsync(offset);
 
-                var templatedApplicationEndpoint = await service.Applications.CreateEndpointAsync(name);
+                    foreach (var application in collection)
+                    {
+                        Console.WriteLine("{0}. {1}", ++i, application.Id);
 
-                templatedApplicationEndpoint.CreateAsync("barebones", creationAttributes);
+                        if (application.Name == "twitter2")
+                        {
 
-                var updateAttributes = new ApplicationAttributes()
+                            //// As is: Confusion about what a REST API call because of side effects
+
+                            await application.DisableAsync();                  // Does this method update state?
+                            await application.GetAsync();                      // The docs say no so I GetAsync.
+
+                            if (application.Disabled)                          // Thank goodness I checked the docs
+                            {
+                                Console.WriteLine("It worked");
+                            }
+
+                            //// Might be: One extra line of code, but greater clarity because of these two rules
+                            //// 1. Methods produce no side effects
+                            //// 2. Intellisense tells me what the REST API returns: an entity, an entity collection, 
+                            ////    status, nothing, or something else.
+
+                            endpoint = applicationsEndpoint.GetEndpoint("twitter2");
+
+                            await endpoint.DisableAsync();                     // Rule: Methods produce no side effects
+                            var twitter2 = await endpoint.GetAsync();          // Rule: Intellisense tells me what's returned
+
+                            if (twitter2.Disabled)                             // Thank goodness: No need to check the docs!
+                            {
+                                Console.WriteLine("Verified: It worked!");
+                            }
+                        }
+                    }
+
+                    offset += collection.Pagination.ItemsPerPage;
+                }
+                while (offset < collection.Pagination.TotalResults);
+
+                //// The loop was not really necessary
+
+                endpoint = applicationsEndpoint.GetEndpoint("twitter2");
+                Console.WriteLine("Renabling the twitter2 application at ",    // All endpoints have addresses
+                    endpoint.Address);
+
+                try
                 {
-                    ApplicationAuthor = "Splunk, Inc.",
-                    Configured = true,
-                    Description = "This app update confirms that an app can be updated from a template",
-                    Label = name,
-                    Version = "2.0.1",
-                    Visible = true
-                };
+                    await endpoint.EnableAsync();                              // Rule: Methods produce no side effects
+                    var twitter2 = await endpoint.GetAsync();                  // Rule: Intellisense tells me what's returned
 
-                await templatedApplicationEndpoint.UpdateAsync(updateAttributes, checkForUpdates: true);
-                await templatedApplicationEndpoint.GetAsync();
-
-                await templatedApplicationEndpoint.DisableAsync();
-                await templatedApplicationEndpoint.GetAsync(); // Because POST apps/local/{name}/disable does not return new data
-
-                await templatedApplicationEndpoint.EnableAsync();
-                await templatedApplicationEndpoint.GetAsync(); // Because POST apps/local/{name}/enable does not return new data
-
-                var templatedApplicationArchiveInfo = await templatedApplicationEndpoint.PackageAsync();
-                await templatedApplicationArchiveInfo.GetAsync(); // won't compile because resources aren't endpoints
-                await templatedApplicationEndpoint.RemoveAsync();
+                    if (!twitter2.Disabled)
+                    {
+                        Console.WriteLine("Verified: It worked!");
+                    }
+                }
+                catch (ResourceNotFoundException)
+                {
+                    Console.WriteLine("Say what?");
+                }
             }
         }
     }
