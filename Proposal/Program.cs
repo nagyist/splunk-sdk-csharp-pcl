@@ -17,8 +17,9 @@
         {
             //// This major issue surfaces over and over again
             //// - Confusion due to uncertainty about side effects
-            //// Question: When must I call GetAsync to update the state of an
-            //// entity or entity collection.
+            //// Question: 
+            //// - When must I call GetAsync to update the state of an entity or 
+            ////   entity collection?
 
             using (var service = new Service(Scheme.Https, "localhost", 8089))
             {
